@@ -6,6 +6,21 @@ It works by wrapping the main view, replacing the characters at certain areas wi
 
 ![Demo with Moai app](./bubblegum.gif)
 
+To use this module, download it using
+
+```
+go get github.com/genekkion/bubblegum/list
+```
+
+And import it into your code as such
+
+```
+import bgList "github.com/genekkion/bubblegum/list"
+```
+
+You may want to import it under a different name than `list` as Bubble uses `list` as its package name as well.
+
+
 At the moment, it is tested with wrapping `fullscreen` views only, but further improvements will make use of relative sizing based off the child view. An example of how to use it is shown below.
 
 ```
