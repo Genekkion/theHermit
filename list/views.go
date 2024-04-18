@@ -1,4 +1,4 @@
-package bubblegum
+package list
 
 import (
 	"fmt"
@@ -200,7 +200,7 @@ func (model *List) middleBorder(line *string, item *Item, index int) string {
 		}
 
 	} else {
-		itemText = fmt.Sprintf((*item).Title())
+		itemText = (*item).Title()
 		if lipgloss.Width(itemText) > model.width-2 {
 			itemText = itemText[:model.width-2]
 		}

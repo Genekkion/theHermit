@@ -1,47 +1,7 @@
-package bubblegum
+package list
 
 import "github.com/charmbracelet/lipgloss"
 
-/*
-	type Bubblegum struct {
-		// Height & width of the entire model
-		height int
-		width  int
-
-		// Max limits on the height & width
-		maxHeight int
-		maxWidth  int
-
-		// Window dimensions which are updated during
-		// the Update function
-		windowHeight int
-		windowWidth  int
-
-		// Precalculated leftPadding length during
-		// window resizes
-		leftPadding int
-
-		// Misc details
-		title      string
-		isNumbered bool
-
-		// Working mechanisms for the list
-		cursor int
-		offset int
-		items  []Item
-		view   string
-
-		// Styles
-		borderStyle   lipgloss.Style
-		titleStyle    lipgloss.Style
-		selectedStyle lipgloss.Style
-		itemStyle     lipgloss.Style
-
-		// Border is specificied seperately and DOES NOT
-		// come from any of the above styles
-		border lipgloss.Border
-	}
-*/
 
 func (model List) GetHeight() int {
 	return model.height

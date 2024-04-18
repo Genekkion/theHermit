@@ -1,4 +1,4 @@
-package bubblegum
+package list
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
@@ -116,7 +116,7 @@ func (model List) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		// Updates the height and width accordingly to fit
 		// fit all screen sizes.
 		// WARN: May be buggy for really tiny screens :(
-		if model.height >= model.height {
+		if message.Height >= model.height {
 			model.height = min(model.maxHeight, message.Height)
 		} else {
 			model.height = min(model.height, message.Height)
