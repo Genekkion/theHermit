@@ -44,7 +44,7 @@ type List struct {
 	border lipgloss.Border
 }
 
-// Initialises a QuickFixList with sensible defaults.
+// Initialises a List with sensible defaults.
 func InitDefaultList(items []Item) List {
 	return List{
 		cursor:     0,
@@ -75,7 +75,7 @@ func InitDefaultList(items []Item) List {
 	}
 }
 
-// Initialises a Bubblegum instance
+// Initialises a List instance
 func InitList(height int, width int, items []Item) List {
 	return List{
 		cursor:     0,
