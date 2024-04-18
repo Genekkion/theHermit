@@ -15,7 +15,7 @@ var (
 )
 
 // Writes the left padding for the list to the string builder.
-func (model *Bubblegum) writeLeftPadding(stringBuilder *strings.Builder, chars *[]string) {
+func (model *List) writeLeftPadding(stringBuilder *strings.Builder, chars *[]string) {
 	index := 0
 	limit := min(model.windowWidth, model.leftPadding)
 
@@ -54,7 +54,7 @@ func isCode(regexMatches [][]int, index int) bool {
 }
 
 // Writes the right padding for the list to the string builder.
-func (model *Bubblegum) writeRightPadding(stringBuilder *strings.Builder, chars *[]string,
+func (model *List) writeRightPadding(stringBuilder *strings.Builder, chars *[]string,
 	line *string) {
 
 	currentWidth := lipgloss.Width(stringBuilder.String())
@@ -97,7 +97,7 @@ func (model *Bubblegum) writeRightPadding(stringBuilder *strings.Builder, chars 
 
 // Returns the string for the top border of the list,
 // accounting for the background text.
-func (model *Bubblegum) topBorder(line *string) string {
+func (model *List) topBorder(line *string) string {
 	text := strings.Builder{}
 	chars := strings.Split(*line, "")
 
@@ -150,7 +150,7 @@ func (model *Bubblegum) topBorder(line *string) string {
 
 // Returns the string for the bottom border of the list,
 // accounting for the background text.
-func (model *Bubblegum) bottomBorder(line *string) string {
+func (model *List) bottomBorder(line *string) string {
 	text := strings.Builder{}
 	chars := strings.Split(*line, "")
 
@@ -171,7 +171,7 @@ func (model *Bubblegum) bottomBorder(line *string) string {
 
 // Returns the string for the items on the list,
 // accounting for background text.
-func (model *Bubblegum) middleBorder(line *string, item *Item, index int) string {
+func (model *List) middleBorder(line *string, item *Item, index int) string {
 	text := strings.Builder{}
 	chars := strings.Split(*line, "")
 
@@ -234,7 +234,7 @@ func (model *Bubblegum) middleBorder(line *string, item *Item, index int) string
 }
 
 // FOr use when there are lesser items than there are rows.
-func (model Bubblegum) middleSpacer(line *string) string {
+func (model List) middleSpacer(line *string) string {
 	text := strings.Builder{}
 	chars := strings.Split(*line, "")
 
@@ -261,7 +261,7 @@ func (model Bubblegum) middleSpacer(line *string) string {
 }
 
 // The main view for the list.
-func (model Bubblegum) View() string {
+func (model List) View() string {
 	if model.windowWidth == 0 || model.windowHeight == 0 {
 		return ""
 	}

@@ -5,7 +5,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type Bubblegum struct {
+type List struct {
 	// Height & width of the entire model
 	height int
 	width  int
@@ -45,8 +45,8 @@ type Bubblegum struct {
 }
 
 // Initialises a QuickFixList with sensible defaults.
-func InitDefaultBubblegum(items []Item) Bubblegum {
-	return Bubblegum{
+func InitDefaultBubblegum(items []Item) List {
+	return List{
 		cursor:     0,
 		height:     14,
 		width:      81,
@@ -76,8 +76,8 @@ func InitDefaultBubblegum(items []Item) Bubblegum {
 }
 
 // Initialises a Bubblegum instance
-func InitBubblegum(height int, width int, items []Item) Bubblegum {
-	return Bubblegum{
+func InitBubblegum(height int, width int, items []Item) List {
+	return List{
 		cursor:     0,
 		height:     height,
 		width:      width,
@@ -106,11 +106,11 @@ func InitBubblegum(height int, width int, items []Item) Bubblegum {
 	}
 }
 
-func (model Bubblegum) Init() tea.Cmd {
+func (model List) Init() tea.Cmd {
 	return nil
 }
 
-func (model Bubblegum) Update(message tea.Msg) (tea.Model, tea.Cmd) {
+func (model List) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch message := message.(type) {
 	case tea.WindowSizeMsg:
 		// Updates the height and width accordingly to fit

@@ -43,119 +43,118 @@ import "github.com/charmbracelet/lipgloss"
 	}
 */
 
-func (model Bubblegum) GetHeight() int {
+func (model List) GetHeight() int {
 	return model.height
 }
 
-func (model *Bubblegum) SetHeight(height int) {
+func (model *List) SetHeight(height int) {
 	model.height = height
 }
 
-func (model Bubblegum) GetWidth() int {
+func (model List) GetWidth() int {
 	return model.width
 }
 
-func (model *Bubblegum) SetWidth(width int) {
+func (model *List) SetWidth(width int) {
 	model.width = width
 }
 
-func (model Bubblegum) GetMaxHeight() int {
+func (model List) GetMaxHeight() int {
 	return model.maxHeight
 }
 
-func (model *Bubblegum) SetMaxHeight(maxHeight int) {
+func (model *List) SetMaxHeight(maxHeight int) {
 	model.maxHeight = maxHeight
 }
 
-func (model Bubblegum) GetMaxWidth() int {
+func (model List) GetMaxWidth() int {
 	return model.maxWidth
 }
 
-func (model *Bubblegum) SetMaxWidth(maxWidth int) {
+func (model *List) SetMaxWidth(maxWidth int) {
 	model.maxWidth = maxWidth
 }
 
-func (model Bubblegum) GetSelectedItem() Item {
+func (model List) GetSelectedItem() Item {
 	return model.items[model.cursor]
 }
 
-func (model Bubblegum) Cursor() int {
+func (model List) Cursor() int {
 	return model.cursor
 }
 
-func (model Bubblegum) GetItems() []Item {
+func (model List) GetItems() []Item {
 	return model.items
 }
 
-func (model *Bubblegum) SetItems(items []Item) {
+func (model *List) SetItems(items []Item) {
 	model.items = items
 }
 
-func (model Bubblegum) Title() string {
+func (model List) Title() string {
 	return model.title
 }
 
-func (model *Bubblegum) SetTitle(title string) {
+func (model *List) SetTitle(title string) {
 	model.title = title
 }
 
-func (model *Bubblegum) SetView(view string) {
+func (model *List) SetView(view string) {
 	model.view = view
 }
 
-func (model Bubblegum) GetView() string {
+func (model List) GetView() string {
 	return model.view
 }
 
-func (model *Bubblegum) SetBorder(border lipgloss.Border) {
+func (model *List) SetBorder(border lipgloss.Border) {
 	model.border = border
 }
 
-func (model Bubblegum) GetBorder() lipgloss.Border {
+func (model List) GetBorder() lipgloss.Border {
 	return model.border
 }
 
-func (model *Bubblegum) SetBorderForeground(color lipgloss.Color) {
+func (model *List) SetBorderForeground(color lipgloss.Color) {
 	model.borderStyle = model.borderStyle.BorderForeground(color)
 }
 
-func (model *Bubblegum) SetBorderBackground(color lipgloss.Color) {
+func (model *List) SetBorderBackground(color lipgloss.Color) {
 	model.borderStyle = model.borderStyle.BorderBackground(color)
 }
 
-func (model *Bubblegum) SetTitleForeground(color lipgloss.Color) {
+func (model *List) SetTitleForeground(color lipgloss.Color) {
 	model.titleStyle = model.titleStyle.Foreground(color)
 }
 
-func (model *Bubblegum) SetTitleBackground(color lipgloss.Color) {
+func (model *List) SetTitleBackground(color lipgloss.Color) {
 	model.titleStyle = model.titleStyle.Background(color)
 }
 
-func (model *Bubblegum) SetTitleBold(bold bool) {
+func (model *List) SetTitleBold(bold bool) {
 	model.titleStyle = model.titleStyle.Bold(bold)
 }
 
-func (model *Bubblegum) SetItemForeground(color lipgloss.Color) {
+func (model *List) SetItemForeground(color lipgloss.Color) {
 	model.itemStyle = model.itemStyle.Foreground(color)
 }
 
-func (model *Bubblegum) SetItemBackground(color lipgloss.Color) {
+func (model *List) SetItemBackground(color lipgloss.Color) {
 	model.itemStyle = model.itemStyle.Background(color)
 }
 
-func (model *Bubblegum) SetItemBold(bold bool) {
+func (model *List) SetItemBold(bold bool) {
 	model.itemStyle = model.itemStyle.Bold(bold)
 }
 
-func (model *Bubblegum) SetSelectedForeground(color lipgloss.Color) {
+func (model *List) SetSelectedForeground(color lipgloss.Color) {
 	model.selectedStyle = model.selectedStyle.Foreground(color)
 }
 
-func (model *Bubblegum) SetSelectedBackground(color lipgloss.Color) {
+func (model *List) SetSelectedBackground(color lipgloss.Color) {
 	model.selectedStyle = model.selectedStyle.Background(color)
 }
 
-func (model *Bubblegum) SetSelectedBold(bold bool) {
+func (model *List) SetSelectedBold(bold bool) {
 	model.selectedStyle = model.selectedStyle.Bold(bold)
 }
-
