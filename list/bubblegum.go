@@ -45,7 +45,7 @@ type List struct {
 }
 
 // Initialises a QuickFixList with sensible defaults.
-func InitDefaultBubblegum(items []Item) List {
+func InitDefaultList(items []Item) List {
 	return List{
 		cursor:     0,
 		height:     14,
@@ -76,7 +76,7 @@ func InitDefaultBubblegum(items []Item) List {
 }
 
 // Initialises a Bubblegum instance
-func InitBubblegum(height int, width int, items []Item) List {
+func InitList(height int, width int, items []Item) List {
 	return List{
 		cursor:     0,
 		height:     height,
