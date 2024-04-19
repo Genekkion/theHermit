@@ -68,7 +68,7 @@ func (model *List) writeRightPadding(stringBuilder *strings.Builder, chars *[]st
 	rightPaddingLength := model.windowWidth - currentWidth - 1
 	index := len(*chars) - 1
 	rightPadding := []string{}
-	for paddingLength(rightPadding) < rightPaddingLength || isCode(colorCodes, index) {
+	for isCode(colorCodes, index) || paddingLength(rightPadding) < rightPaddingLength {
 		rightPadding = append([]string{(*chars)[index]}, rightPadding...)
 		index--
 	}
