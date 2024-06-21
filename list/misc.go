@@ -1,120 +1,143 @@
 package list
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+)
 
+func (model Model) GetIsNumbered() bool {
+	return model.isNumbered
+}
 
-func (model List) GetHeight() int {
+func (model *Model) SetIsNumbered(isNumbered bool) {
+	model.isNumbered = isNumbered
+}
+
+func (model Model) GetIsShown() bool {
+	return model.isShown
+}
+
+func (model *Model) SetIsShown(isShown bool) {
+	model.isShown = isShown
+}
+
+func (model Model) GetHeight() int {
 	return model.height
 }
 
-func (model *List) SetHeight(height int) {
+func (model *Model) SetHeight(height int) {
 	model.height = height
 }
 
-func (model List) GetWidth() int {
+func (model Model) GetWidth() int {
 	return model.width
 }
 
-func (model *List) SetWidth(width int) {
+func (model *Model) SetWidth(width int) {
 	model.width = width
 }
 
-func (model List) GetMaxHeight() int {
+func (model Model) GetMaxHeight() int {
 	return model.maxHeight
 }
 
-func (model *List) SetMaxHeight(maxHeight int) {
+func (model *Model) SetMaxHeight(maxHeight int) {
 	model.maxHeight = maxHeight
 }
 
-func (model List) GetMaxWidth() int {
+func (model Model) GetMaxWidth() int {
 	return model.maxWidth
 }
 
-func (model *List) SetMaxWidth(maxWidth int) {
+func (model *Model) SetMaxWidth(maxWidth int) {
 	model.maxWidth = maxWidth
 }
 
-func (model List) GetSelectedItem() Item {
+func (model Model) GetSelectedItem() Item {
 	return model.items[model.cursor]
 }
 
-func (model List) Cursor() int {
+func (model Model) Cursor() int {
 	return model.cursor
 }
 
-func (model List) GetItems() []Item {
+func (model Model) SetCursor(cursor int) Model {
+	model.cursor = max(min(cursor, len(model.items)-1), 0)
+	return model
+}
+
+func (model Model) GetItems() []Item {
 	return model.items
 }
 
-func (model *List) SetItems(items []Item) {
+func (model *Model) SetItems(items []Item) {
 	model.items = items
 }
 
-func (model List) Title() string {
+func (model Model) Title() string {
 	return model.title
 }
 
-func (model *List) SetTitle(title string) {
+func (model *Model) SetTitle(title string) {
 	model.title = title
 }
 
-func (model *List) SetView(view string) {
+func (model *Model) SetView(view string) {
 	model.view = view
 }
 
-func (model List) GetView() string {
+func (model Model) GetView() string {
 	return model.view
 }
 
-func (model *List) SetBorder(border lipgloss.Border) {
+func (model *Model) SetBorder(border lipgloss.Border) {
 	model.border = border
 }
 
-func (model List) GetBorder() lipgloss.Border {
+func (model Model) GetBorder() lipgloss.Border {
 	return model.border
 }
 
-func (model *List) SetBorderForeground(color lipgloss.Color) {
-	model.borderStyle = model.borderStyle.BorderForeground(color)
+func (model *Model) SetBorderForeground(color lipgloss.Color) {
+	model.borderStyle = model.borderStyle.Foreground(color)
 }
 
-func (model *List) SetBorderBackground(color lipgloss.Color) {
-	model.borderStyle = model.borderStyle.BorderBackground(color)
+func (model *Model) SetBorderBackground(color lipgloss.Color) {
+	// model.borderStyle = model.borderStyle.BorderBackground(color)
+	model.borderStyle = model.borderStyle.Background(color)
 }
 
-func (model *List) SetTitleForeground(color lipgloss.Color) {
+func (model *Model) SetTitleForeground(color lipgloss.Color) {
 	model.titleStyle = model.titleStyle.Foreground(color)
 }
 
-func (model *List) SetTitleBackground(color lipgloss.Color) {
+func (model *Model) SetTitleBackground(color lipgloss.Color) {
 	model.titleStyle = model.titleStyle.Background(color)
 }
 
-func (model *List) SetTitleBold(bold bool) {
+func (model *Model) SetTitleBold(bold bool) {
 	model.titleStyle = model.titleStyle.Bold(bold)
 }
 
-func (model *List) SetItemForeground(color lipgloss.Color) {
+func (model *Model) SetItemForeground(color lipgloss.Color) {
 	model.itemStyle = model.itemStyle.Foreground(color)
 }
 
-func (model *List) SetItemBackground(color lipgloss.Color) {
+func (model *Model) SetItemBackground(color lipgloss.Color) {
 	model.itemStyle = model.itemStyle.Background(color)
 }
 
-func (model *List) SetItemBold(bold bool) {
+func (model *Model) SetItemBold(bold bool) {
 	model.itemStyle = model.itemStyle.Bold(bold)
 }
 
-func (model *List) SetSelectedForeground(color lipgloss.Color) {
+func (model *Model) SetSelectedForeground(color lipgloss.Color) {
 	model.selectedStyle = model.selectedStyle.Foreground(color)
 }
 
-func (model *List) SetSelectedBackground(color lipgloss.Color) {
+func (model *Model) SetSelectedBackground(color lipgloss.Color) {
 	model.selectedStyle = model.selectedStyle.Background(color)
 }
 
-func (model *List) SetSelectedBold(bold bool) {
+func (model *Model) SetSelectedBold(bold bool) {
 	model.selectedStyle = model.selectedStyle.Bold(bold)
 }

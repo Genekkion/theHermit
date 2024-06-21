@@ -15,7 +15,7 @@ var (
 )
 
 // Writes the left padding for the list to the string builder.
-func (model *List) writeLeftPadding(stringBuilder *strings.Builder, chars *[]string) {
+func (model *Model) writeLeftPadding(stringBuilder *strings.Builder, chars *[]string) {
 	index := 0
 	limit := min(model.windowWidth, model.leftPadding)
 
@@ -54,7 +54,7 @@ func isCode(regexMatches [][]int, index int) bool {
 }
 
 // Writes the right padding for the list to the string builder.
-func (model *List) writeRightPadding(stringBuilder *strings.Builder, chars *[]string,
+func (model *Model) writeRightPadding(stringBuilder *strings.Builder, chars *[]string,
 	line *string) {
 
 	currentWidth := lipgloss.Width(stringBuilder.String())
@@ -97,7 +97,7 @@ func (model *List) writeRightPadding(stringBuilder *strings.Builder, chars *[]st
 
 // Returns the string for the top border of the list,
 // accounting for the background text.
-func (model *List) topBorder(line *string) string {
+func (model *Model) topBorder(line *string) string {
 	text := strings.Builder{}
 	chars := strings.Split(*line, "")
 
@@ -150,7 +150,7 @@ func (model *List) topBorder(line *string) string {
 
 // Returns the string for the bottom border of the list,
 // accounting for the background text.
-func (model *List) bottomBorder(line *string) string {
+func (model *Model) bottomBorder(line *string) string {
 	text := strings.Builder{}
 	chars := strings.Split(*line, "")
 
@@ -171,7 +171,7 @@ func (model *List) bottomBorder(line *string) string {
 
 // Returns the string for the items on the list,
 // accounting for background text.
-func (model *List) middleBorder(line *string, item *Item, index int) string {
+func (model *Model) middleBorder(line *string, item *Item, index int) string {
 	text := strings.Builder{}
 	chars := strings.Split(*line, "")
 
@@ -234,7 +234,7 @@ func (model *List) middleBorder(line *string, item *Item, index int) string {
 }
 
 // FOr use when there are lesser items than there are rows.
-func (model List) middleSpacer(line *string) string {
+func (model Model) middleSpacer(line *string) string {
 	text := strings.Builder{}
 	chars := strings.Split(*line, "")
 
@@ -261,7 +261,10 @@ func (model List) middleSpacer(line *string) string {
 }
 
 // The main view for the list.
-func (model List) View() string {
+func (model Model) View() string {
+	if !model.isShown {
+		return model.GetView()
+	}
 	if model.windowWidth == 0 || model.windowHeight == 0 {
 		return ""
 	}
@@ -287,7 +290,6 @@ func (model List) View() string {
 	itemLength := len(items)
 
 	itemIndex := 0
-
 	length := len(arrayView) - 1
 	for i, line := range arrayView {
 		switch {
@@ -297,8 +299,13 @@ func (model List) View() string {
 			text.WriteString(model.bottomBorder(&line))
 		case i > midPoint1 && i < midPoint2:
 			if itemIndex < itemLength {
-				text.WriteString(model.middleBorder(&line, &items[itemIndex],
-					itemIndex+model.offset))
+				text.WriteString(
+					model.middleBorder(
+						&line,
+						&items[itemIndex],
+						itemIndex+model.offset,
+					),
+				)
 				itemIndex++
 			} else {
 				text.WriteString(model.middleSpacer(&line))
