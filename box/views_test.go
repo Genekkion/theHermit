@@ -117,3 +117,33 @@ func TestTopBorder(t *testing.T) {
 		})
 	}
 }
+
+func TestBottomBorder(t *testing.T) {
+	type Data struct {
+		name     string
+		width    int
+		style    lipgloss.Style
+		expected string
+	}
+
+	testData := []Data{
+		{
+			name:  "simple",
+			width: 15,
+			style: lipgloss.NewStyle().
+				Border(lipgloss.NormalBorder()),
+			expected: "└─────────────┘",
+		},
+	}
+
+	for _, data := range testData {
+		t.Run(data.name, func(t *testing.T) {
+			t.Parallel()
+
+			test.AssertEqual(t, "Unexpected render",
+				data.expected,
+				bottomBorder(data.width, data.style),
+			)
+		})
+	}
+}

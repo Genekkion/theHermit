@@ -103,3 +103,15 @@ func topBorder(width int, style lipgloss.Style, tt *title.Title) string {
 
 	return builder.String()
 }
+
+func bottomBorder(width int, style lipgloss.Style) string {
+	builder := strings.Builder{}
+	border, _, _, _, _ := style.GetBorder()
+
+	builder.WriteString(border.BottomLeft)
+	bottom := style.UnsetBorderStyle().Render(border.Bottom)
+	builder.WriteString(strings.Repeat(bottom, width-2))
+	builder.WriteString(border.BottomRight)
+
+	return builder.String()
+}
