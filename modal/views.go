@@ -48,13 +48,14 @@ func (m *Model) writeTopSpacer() {
 // generateTopSpacer returns the top spacer string, i.e. the lines above the
 // modal.
 func (m *Model) generateTopSpacer() string {
-	builder := strings.Builder{}
-
-	for _, line := range m.cache.parent.lines[:m.cache.startIndex] {
-		builder.WriteString(line)
-		builder.WriteByte('\n')
-	}
-	return builder.String()
+    builder := strings.Builder{}
+    // Clamp the slice upper bound to avoid out-of-range when startIndex > len(lines)
+    upTo := min(m.cache.startIndex, len(m.cache.parent.lines))
+    for _, line := range m.cache.parent.lines[:upTo] {
+        builder.WriteString(line)
+        builder.WriteByte('\n')
+    }
+    return builder.String()
 }
 
 // writeBottomSpacer writes the bottom spacer string to the builder.
@@ -65,14 +66,15 @@ func (m *Model) writeBottomSpacer() {
 // generateBottomSpacer returns the bottom spacer string, i.e. the lines below
 // the modal.
 func (m *Model) generateBottomSpacer() string {
-	builder := strings.Builder{}
-
-	parentLines := m.cache.parent.lines[m.cache.endIndex:]
-	n := len(parentLines) - 1
-	for i, line := range parentLines {
-		builder.WriteString(line)
-		if i != n {
-			builder.WriteByte('\n')
+    builder := strings.Builder{}
+    // Clamp the slice lower bound to avoid out-of-range when endIndex > len(lines)
+    start := min(m.cache.endIndex, len(m.cache.parent.lines))
+    parentLines := m.cache.parent.lines[start:]
+    n := len(parentLines) - 1
+    for i, line := range parentLines {
+        builder.WriteString(line)
+        if i != n {
+            builder.WriteByte('\n')
 		}
 	}
 
@@ -88,7 +90,7 @@ func (m *Model) writeContent() {
 // and the child view. Note that the top and bottom borders are not included and have
 // separate functions.
 func (m *Model) generateContent() string {
-	builder := strings.Builder{}
+    builder := strings.Builder{}
 
 	unsetStyle := m.style.
 		UnsetPadding().
@@ -96,19 +98,23 @@ func (m *Model) generateContent() string {
 		UnsetBorderStyle()
 	border, _, _, _, _ := m.style.GetBorder()
 
-	startIndex := m.cache.startIndex
-	parentLines := m.cache.parent.lines[startIndex+1:]
-	childLines := m.cache.child.lines
-	childWidths := m.cache.child.widths
-	childLimit := max(0, min(len(childLines), m.dims.Height-2))
-	if childLimit == 0 {
-		return ""
-	}
+ startIndex := m.cache.startIndex
+ // Clamp base to avoid startIndex+1 exceeding the line count
+ base := min(startIndex+1, len(m.cache.parent.lines))
+ parentLines := m.cache.parent.lines[base:]
+ childLines := m.cache.child.lines
+ childWidths := m.cache.child.widths
+ childLimit := max(0, min(len(childLines), m.dims.Height-2))
+ // Ensure we don't index parentLines[i] out of range in the loop below
+ childLimit = min(childLimit, len(parentLines))
+ if childLimit == 0 {
+     return ""
+ }
 
-	for i, line := range childLines[:childLimit] {
-		leftPad := m.generateLeftPadding(
-			utils.SplitColumns(parentLines[i]),
-		)
+ for i, line := range childLines[:childLimit] {
+     leftPad := m.generateLeftPadding(
+         utils.SplitColumns(parentLines[i]),
+     )
 		builder.WriteString(leftPad)
 
 		builder.WriteString(unsetStyle.Render(border.Left))
@@ -130,12 +136,18 @@ func (m *Model) generateContent() string {
 		builder.WriteByte('\n')
 	}
 
-	parentLines = parentLines[childLimit:]
-	for i := range m.dims.Height - 2 - childLimit {
-		leftPad := m.generateLeftPadding(
-			utils.SplitColumns(parentLines[i]),
-		)
-		builder.WriteString(leftPad)
+ parentLines = parentLines[childLimit:]
+ // Fill the remaining inner height, clamped to available parent lines
+ toFill := m.dims.Height - 2 - childLimit
+ if toFill <= 0 {
+     return builder.String()
+ }
+ limit := min(toFill, len(parentLines))
+ for i := 0; i < limit; i++ {
+     leftPad := m.generateLeftPadding(
+         utils.SplitColumns(parentLines[i]),
+     )
+     builder.WriteString(leftPad)
 
 		builder.WriteString(unsetStyle.Render(border.Left))
 
@@ -163,14 +175,20 @@ func (m *Model) writeTopBorder() {
 // generateTopBorder returns the top border string, i.e. the line above the modal, which may
 // include the title if present.
 func (m *Model) generateTopBorder() string {
-	builder := strings.Builder{}
-	line := m.cache.parent.lines[m.cache.startIndex]
-	chars := utils.SplitColumns(line)
-	builder.WriteString(m.generateLeftPadding(chars))
-	builder.WriteString(generateTopBorder(m.dims.Width, m.style, m.title))
-	builder.WriteString(m.generateRightPadding(chars))
-	builder.WriteByte('\n')
-	return builder.String()
+    builder := strings.Builder{}
+    // Guard against out-of-range when startIndex is beyond parent lines
+    if m.cache.startIndex >= len(m.cache.parent.lines) {
+        builder.WriteString(generateTopBorder(m.dims.Width, m.style, m.title))
+        builder.WriteByte('\n')
+        return builder.String()
+    }
+    line := m.cache.parent.lines[m.cache.startIndex]
+    chars := utils.SplitColumns(line)
+    builder.WriteString(m.generateLeftPadding(chars))
+    builder.WriteString(generateTopBorder(m.dims.Width, m.style, m.title))
+    builder.WriteString(m.generateRightPadding(chars))
+    builder.WriteByte('\n')
+    return builder.String()
 }
 
 // generateTopBorder returns the top border string.
@@ -220,14 +238,21 @@ func (m *Model) writeBottomBorder() {
 
 // generateBottomBorder returns the bottom border string, i.e. the line below the modal.
 func (m *Model) generateBottomBorder() string {
-	builder := strings.Builder{}
-	line := m.cache.parent.lines[m.cache.endIndex-1]
-	chars := utils.SplitColumns(line)
-	builder.WriteString(m.generateLeftPadding(chars))
-	builder.WriteString(generateBottomBorder(m.dims.Width, m.style))
-	builder.WriteString(m.generateRightPadding(chars))
-	builder.WriteByte('\n')
-	return builder.String()
+    builder := strings.Builder{}
+    idx := m.cache.endIndex - 1
+    // Guard against invalid index (negative or beyond parent lines)
+    if idx < 0 || idx >= len(m.cache.parent.lines) {
+        builder.WriteString(generateBottomBorder(m.dims.Width, m.style))
+        builder.WriteByte('\n')
+        return builder.String()
+    }
+    line := m.cache.parent.lines[idx]
+    chars := utils.SplitColumns(line)
+    builder.WriteString(m.generateLeftPadding(chars))
+    builder.WriteString(generateBottomBorder(m.dims.Width, m.style))
+    builder.WriteString(m.generateRightPadding(chars))
+    builder.WriteByte('\n')
+    return builder.String()
 }
 
 // generateBottomBorder returns the bottom border string.
@@ -249,26 +274,33 @@ func generateBottomBorder(width int, style lipgloss.Style) string {
 // generateLeftPadding returns the left padding string, i.e. the characters from the parent view,
 // which are present on the left side of the modal when rendered.
 func (m *Model) generateLeftPadding(chars []string) string {
-	limit := min(m.winDims.Width, m.cache.leftPadWidth)
-	return generateLeftPadding(chars, limit)
+    limit := min(m.winDims.Width, m.cache.leftPadWidth)
+    return generateLeftPadding(chars, limit)
 }
 
 // generateLeftPadding returns the left padding string.
 func generateLeftPadding(chars []string, width int) string {
-	return strings.Join(chars[:min(len(chars), width)], "")
+    if width <= 0 {
+        return ""
+    }
+    return strings.Join(chars[:min(len(chars), width)], "")
 }
 
 // generateRightPadding returns the right padding string, i.e. the characters from the parent view,
 // which are present on the right side of the modal when rendered.
 func (m *Model) generateRightPadding(chars []string) string {
-	limit := min(m.winDims.Width, m.cache.leftPadWidth+m.dims.Width)
-	return generateRightPadding(chars, limit)
+    limit := min(m.winDims.Width, m.cache.leftPadWidth+m.dims.Width)
+    return generateRightPadding(chars, limit)
 }
 
 // generateRightPadding returns the right padding string.
 func generateRightPadding(chars []string, width int) string {
-	if len(chars) <= width {
-		return strings.Repeat(" ", width-len(chars))
-	}
-	return strings.Join(chars[width:], "")
+    if width <= 0 {
+        // Nothing to the left of the modal; everything is right padding
+        return strings.Repeat(" ", 0)
+    }
+    if len(chars) <= width {
+        return strings.Repeat(" ", width-len(chars))
+    }
+    return strings.Join(chars[width:], "")
 }
