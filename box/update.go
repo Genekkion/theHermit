@@ -38,11 +38,24 @@ func (m Model) handleWindowResize(msg tea.WindowSizeMsg) (model tea.Model, cmd t
 		m.dims.Width = min(m.dims.Width, msg.Width)
 	}
 
-	m.cacheViews(msg)
-
 	// Update the latest window dims
 	m.winDims.Height = msg.Height
 	m.winDims.Width = msg.Width
+
+	//parentHeight := len(m.cache.parent.lines)
+	//if parentHeight == 0 {
+	//	m.cache.startIndex = 0
+	//	m.cache.endIndex = 0
+	//
+	//	m.cacheViews(msg)
+	//} else {
+	//	bHeight := max(parentHeight, m.dims.Height)
+	//
+	//	// Calculate where to insert the box
+	//	m.cache.startIndex = max(0, (m.winDims.Height-bHeight)/2)
+	//	m.cacheViews(msg)
+	//	m.cache.endIndex = min(len(m.cache.parent.lines), m.cache.startIndex+bHeight)
+	//}
 
 	// Propagate the message to the parent and child
 	cmds := make([]tea.Cmd, 0, 2)
@@ -55,6 +68,10 @@ func (m Model) handleWindowResize(msg tea.WindowSizeMsg) (model tea.Model, cmd t
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
+
+	m.cache.startIndex = max(0, (m.winDims.Height-m.dims.Height)/2)
+	m.cacheViews(msg)
+	m.cache.endIndex = min(len(m.cache.parent.lines), m.winDims.Height, m.cache.startIndex+m.dims.Height)
 
 	return m, tea.Batch(cmds...)
 }
@@ -73,6 +90,9 @@ func (m *Model) cacheViews(msg tea.WindowSizeMsg) {
 	// child view since updates will trigger rerenders which
 	// may result in unnecessary recalculations.
 	//childModified := m.cacheChildView()
+
+	m.cacheParentView()
+	m.cacheChildView()
 }
 
 func (m *Model) updateLeftPadding(msgWidth int) {

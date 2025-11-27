@@ -18,40 +18,36 @@ func (m Model) View() string {
 			return m.parent.View()
 		}
 		// Should never happen
-		return ""
-	} else if m.winDims.Width == 0 || m.winDims.Height == 0 {
+		panic("parent is nil")
+
+	} else if m.winDims.Width == 0 || m.winDims.Height == 0 ||
+		m.cache.parent.maxWidth == 0 || len(m.cache.parent.lines) == 0 {
+
 		// If the window is flattened, we do not render anything.
 		return ""
-	}
 
-	parentLines, _, parentWidth := utils.Lines(m.parent.View())
-	if len(parentLines) == 0 || parentWidth == 0 {
-		return ""
 	}
 
 	m.builder.Reset()
 
-	// Calculate where to insert the box
-	startIndex := (m.winDims.Height / 2) - (m.dims.Height / 2)
-	endIndex := startIndex + m.dims.Height
-
-	m.writeTopSpacer(parentLines[:startIndex])
-	m.writeTopBorder(parentLines[startIndex])
-	m.writeContent(parentLines, startIndex)
-	m.writeBottomBorder(parentLines[endIndex-1])
-	m.writeBottomSpacer(parentLines[endIndex:])
+	m.writeTopSpacer()
+	m.writeTopBorder()
+	m.writeContent()
+	m.writeBottomBorder()
+	m.writeBottomSpacer()
 
 	return m.builder.String()
 }
 
-func (m *Model) writeTopSpacer(parentLines []string) {
-	for _, line := range parentLines {
+func (m *Model) writeTopSpacer() {
+	for _, line := range m.cache.parent.lines[:m.cache.startIndex] {
 		m.builder.WriteString(line)
 		m.builder.WriteByte('\n')
 	}
 }
 
-func (m *Model) writeBottomSpacer(parentLines []string) {
+func (m *Model) writeBottomSpacer() {
+	parentLines := m.cache.parent.lines[m.cache.endIndex:]
 	n := len(parentLines) - 1
 	for i, line := range parentLines {
 		m.builder.WriteString(line)
@@ -61,19 +57,23 @@ func (m *Model) writeBottomSpacer(parentLines []string) {
 	}
 }
 
-func (m *Model) writeContent(parentLines []string, startIndex int) {
+// m.writeContent(parentLines, startIndex)
+func (m *Model) writeContent() {
 	unsetStyle := m.style.
 		UnsetPadding().
 		UnsetMargins().
 		UnsetBorderStyle()
 	border, _, _, _, _ := m.style.GetBorder()
 
-	childLines, childWidths, _ := utils.Lines(m.child.View())
+	startIndex := m.cache.startIndex
+	parentLines := m.cache.parent.lines[startIndex+1:]
+	childLines := m.cache.child.lines
+	childWidths := m.cache.child.widths
 	childLimit := min(len(childLines), m.dims.Height-2)
 
 	for i, line := range childLines[:childLimit] {
 		leftPad := m.generateLeftPadding(
-			utils.SplitColumns(parentLines[startIndex+i+1]),
+			utils.SplitColumns(parentLines[i]),
 		)
 		m.builder.WriteString(leftPad)
 
@@ -88,16 +88,17 @@ func (m *Model) writeContent(parentLines []string, startIndex int) {
 		m.builder.WriteString(unsetStyle.Render(border.Right))
 
 		rightPad := m.generateRightPadding(
-			utils.SplitColumns(parentLines[startIndex+i+1]),
+			utils.SplitColumns(parentLines[i]),
 		)
 		m.builder.WriteString(rightPad)
 
 		m.builder.WriteByte('\n')
 	}
 
+	parentLines = parentLines[childLimit:]
 	for i := range m.dims.Height - 2 - childLimit {
 		leftPad := m.generateLeftPadding(
-			utils.SplitColumns(parentLines[startIndex+childLimit+i+1]),
+			utils.SplitColumns(parentLines[i]),
 		)
 		m.builder.WriteString(leftPad)
 
@@ -109,7 +110,7 @@ func (m *Model) writeContent(parentLines []string, startIndex int) {
 		m.builder.WriteString(unsetStyle.Render(border.Right))
 
 		rightPad := m.generateRightPadding(
-			utils.SplitColumns(parentLines[startIndex+childLimit+i+1]),
+			utils.SplitColumns(parentLines[i]),
 		)
 		m.builder.WriteString(rightPad)
 
@@ -117,7 +118,8 @@ func (m *Model) writeContent(parentLines []string, startIndex int) {
 	}
 }
 
-func (m *Model) writeTopBorder(line string) {
+func (m *Model) writeTopBorder() {
+	line := m.cache.parent.lines[m.cache.startIndex]
 	chars := utils.SplitColumns(line)
 	m.builder.WriteString(m.generateLeftPadding(chars))
 	m.builder.WriteString(topBorder(m.dims.Width, m.style, m.title))
@@ -125,7 +127,8 @@ func (m *Model) writeTopBorder(line string) {
 	m.builder.WriteByte('\n')
 }
 
-func (m *Model) writeBottomBorder(line string) {
+func (m *Model) writeBottomBorder() {
+	line := m.cache.parent.lines[m.cache.endIndex-1]
 	chars := utils.SplitColumns(line)
 	m.builder.WriteString(m.generateLeftPadding(chars))
 	m.builder.WriteString(bottomBorder(m.dims.Width, m.style))
@@ -139,14 +142,14 @@ func (m *Model) cacheParentView() bool {
 	hash := maphash.Hash{}
 	hash.WriteString(m.parent.View())
 	value := hash.Sum64()
-	if m.cache.parentHash == value {
+	if m.cache.parent.hash == value {
 		return false
 	}
-	m.cache.parentHash = value
+	m.cache.parent.hash = value
 
 	// We need to split the parent's view into line by line
 	// as we will have to modify some lines to render the box instead.
-	m.cache.parentLines = strings.Split(m.parent.View(), "\n")
+	m.cache.parent.lines, m.cache.parent.widths, m.cache.parent.maxWidth = utils.Lines(m.parent.View())
 	return true
 }
 
@@ -155,12 +158,12 @@ func (m *Model) cacheChildView() bool {
 	hash := maphash.Hash{}
 	hash.WriteString(m.child.View())
 	value := hash.Sum64()
-	if m.cache.childHash == value {
+	if m.cache.child.hash == value {
 		return false
 	}
-	m.cache.childHash = value
+	m.cache.child.hash = value
 
-	m.cache.childLines = strings.Split(m.parent.View(), "\n")
+	m.cache.child.lines, m.cache.child.widths, m.cache.child.maxWidth = utils.Lines(m.child.View())
 	return true
 }
 

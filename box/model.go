@@ -26,13 +26,21 @@ type Model struct {
 // ViewCache stores any cache-related items such as hashes
 // as well as the cached views.
 type ViewCache struct {
-	parentHash  uint64
-	parentLines []string
-	childHash   uint64
-	childLines  []string
+	parent ViewCacheModel
+	child  ViewCacheModel
 
 	leftPadding    int
 	leftPaddingStr string
+
+	startIndex int
+	endIndex   int
+}
+
+type ViewCacheModel struct {
+	hash     uint64
+	lines    []string
+	widths   []int
+	maxWidth int
 }
 
 func New(dimensions shared.Dimensions, parent tea.Model, child tea.Model, opts ...Option) (m *Model, err error) {
