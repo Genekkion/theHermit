@@ -1,6 +1,7 @@
 package box
 
 import (
+	"hash/maphash"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -26,14 +27,31 @@ type Model struct {
 // ViewCache stores any cache-related items such as hashes
 // as well as the cached views.
 type ViewCache struct {
+	hash   maphash.Hash
 	parent ViewCacheModel
 	child  ViewCacheModel
 
-	leftPadding    int
-	leftPaddingStr string
+	leftPadWidth int
+	startIndex   int
+	endIndex     int
 
-	startIndex int
-	endIndex   int
+	flags ViewCacheFlags
+
+	topSpacer    string
+	topBorder    string
+	content      string
+	bottomBorder string
+	bottomSpacer string
+}
+
+type ViewCacheFlags struct {
+	parentModified bool
+	childModified  bool
+}
+
+func (v *ViewCacheFlags) reset() {
+	v.parentModified = false
+	v.childModified = false
 }
 
 type ViewCacheModel struct {
@@ -63,8 +81,9 @@ func New(dimensions shared.Dimensions, parent tea.Model, child tea.Model, opts .
 		builder: strings.Builder{},
 		Config:  config,
 
-		parent: parent,
-		child:  child,
+		isShown: true,
+		parent:  parent,
+		child:   child,
 	}
 
 	return m, nil

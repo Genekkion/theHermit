@@ -112,7 +112,7 @@ func TestTopBorder(t *testing.T) {
 
 			test.AssertEqual(t, "Unexpected render",
 				data.expected,
-				topBorder(data.width, data.style, data.title),
+				generateTopBorder(data.width, data.style, data.title),
 			)
 		})
 	}
@@ -142,7 +142,7 @@ func TestBottomBorder(t *testing.T) {
 
 			test.AssertEqual(t, "Unexpected render",
 				data.expected,
-				bottomBorder(data.width, data.style),
+				generateBottomBorder(data.width, data.style),
 			)
 		})
 	}

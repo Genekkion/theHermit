@@ -1,7 +1,6 @@
 package box
 
 import (
-	"hash/maphash"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -25,9 +24,10 @@ func (m Model) View() string {
 
 		// If the window is flattened, we do not render anything.
 		return ""
-
 	}
 
+	// Unfortunately, the builder has to be reset every time we render
+	// since the number of bytes per line is not constant.
 	m.builder.Reset()
 
 	m.writeTopSpacer()
@@ -40,25 +40,49 @@ func (m Model) View() string {
 }
 
 func (m *Model) writeTopSpacer() {
+	//m.builder.WriteString(m.generateTopSpacer())
+	m.builder.WriteString(m.cache.topSpacer)
+}
+
+func (m *Model) generateTopSpacer() string {
+	builder := strings.Builder{}
+
 	for _, line := range m.cache.parent.lines[:m.cache.startIndex] {
-		m.builder.WriteString(line)
-		m.builder.WriteByte('\n')
+		builder.WriteString(line)
+		builder.WriteByte('\n')
 	}
+	return builder.String()
 }
 
 func (m *Model) writeBottomSpacer() {
+	//m.builder.WriteString(m.generateBottomSpacer())
+	m.builder.WriteString(m.cache.bottomSpacer)
+}
+
+func (m *Model) generateBottomSpacer() string {
+	builder := strings.Builder{}
+
 	parentLines := m.cache.parent.lines[m.cache.endIndex:]
 	n := len(parentLines) - 1
 	for i, line := range parentLines {
-		m.builder.WriteString(line)
+		builder.WriteString(line)
 		if i != n {
-			m.builder.WriteByte('\n')
+			builder.WriteByte('\n')
 		}
 	}
+
+	return builder.String()
 }
 
-// m.writeContent(parentLines, startIndex)
+// m.builder.WriteStringContent(parentLines, startIndex)
 func (m *Model) writeContent() {
+	//m.builder.WriteString(m.generateContent())
+	m.builder.WriteString(m.cache.content)
+}
+
+func (m *Model) generateContent() string {
+	builder := strings.Builder{}
+
 	unsetStyle := m.style.
 		UnsetPadding().
 		UnsetMargins().
@@ -69,30 +93,34 @@ func (m *Model) writeContent() {
 	parentLines := m.cache.parent.lines[startIndex+1:]
 	childLines := m.cache.child.lines
 	childWidths := m.cache.child.widths
-	childLimit := min(len(childLines), m.dims.Height-2)
+	childLimit := max(0, min(len(childLines), m.dims.Height-2))
+	if childLimit == 0 {
+		return ""
+	}
 
 	for i, line := range childLines[:childLimit] {
 		leftPad := m.generateLeftPadding(
 			utils.SplitColumns(parentLines[i]),
 		)
-		m.builder.WriteString(leftPad)
+		builder.WriteString(leftPad)
 
-		m.builder.WriteString(unsetStyle.Render(border.Left))
+		builder.WriteString(unsetStyle.Render(border.Left))
 
-		m.builder.WriteString(line[:m.dims.Width-2])
+		line = line[:max(0, min(len(line), m.dims.Width-2))]
+		builder.WriteString(line)
 		if childWidths[i] < m.dims.Width-2 {
 			spacer := strings.Repeat(" ", m.dims.Width-2-childWidths[i])
-			m.builder.WriteString(unsetStyle.Render(spacer))
+			builder.WriteString(unsetStyle.Render(spacer))
 		}
 
-		m.builder.WriteString(unsetStyle.Render(border.Right))
+		builder.WriteString(unsetStyle.Render(border.Right))
 
 		rightPad := m.generateRightPadding(
 			utils.SplitColumns(parentLines[i]),
 		)
-		m.builder.WriteString(rightPad)
+		builder.WriteString(rightPad)
 
-		m.builder.WriteByte('\n')
+		builder.WriteByte('\n')
 	}
 
 	parentLines = parentLines[childLimit:]
@@ -100,87 +128,73 @@ func (m *Model) writeContent() {
 		leftPad := m.generateLeftPadding(
 			utils.SplitColumns(parentLines[i]),
 		)
-		m.builder.WriteString(leftPad)
+		builder.WriteString(leftPad)
 
-		m.builder.WriteString(unsetStyle.Render(border.Left))
+		builder.WriteString(unsetStyle.Render(border.Left))
 
 		spacer := strings.Repeat(" ", m.dims.Width-2)
-		m.builder.WriteString(unsetStyle.Render(spacer))
+		builder.WriteString(unsetStyle.Render(spacer))
 
-		m.builder.WriteString(unsetStyle.Render(border.Right))
+		builder.WriteString(unsetStyle.Render(border.Right))
 
 		rightPad := m.generateRightPadding(
 			utils.SplitColumns(parentLines[i]),
 		)
-		m.builder.WriteString(rightPad)
+		builder.WriteString(rightPad)
 
-		m.builder.WriteByte('\n')
+		builder.WriteByte('\n')
 	}
+
+	return builder.String()
 }
 
 func (m *Model) writeTopBorder() {
+	//m.builder.WriteString(m.generateTopBorder())
+	m.builder.WriteString(m.cache.topBorder)
+}
+
+func (m *Model) generateTopBorder() string {
+	builder := strings.Builder{}
 	line := m.cache.parent.lines[m.cache.startIndex]
 	chars := utils.SplitColumns(line)
-	m.builder.WriteString(m.generateLeftPadding(chars))
-	m.builder.WriteString(topBorder(m.dims.Width, m.style, m.title))
-	m.builder.WriteString(m.generateRightPadding(chars))
-	m.builder.WriteByte('\n')
+	builder.WriteString(m.generateLeftPadding(chars))
+	builder.WriteString(generateTopBorder(m.dims.Width, m.style, m.title))
+	builder.WriteString(m.generateRightPadding(chars))
+	builder.WriteByte('\n')
+	return builder.String()
 }
 
 func (m *Model) writeBottomBorder() {
+	//m.builder.WriteString(m.generateBottomBorder())
+	m.builder.WriteString(m.cache.bottomBorder)
+}
+
+func (m *Model) generateBottomBorder() string {
+	builder := strings.Builder{}
 	line := m.cache.parent.lines[m.cache.endIndex-1]
 	chars := utils.SplitColumns(line)
-	m.builder.WriteString(m.generateLeftPadding(chars))
-	m.builder.WriteString(bottomBorder(m.dims.Width, m.style))
-	m.builder.WriteString(m.generateRightPadding(chars))
-	m.builder.WriteByte('\n')
-}
-
-// cacheParentView caches the parent's view by using its hash. Returns if
-// the parent's view has changed since the last time it was cached.
-func (m *Model) cacheParentView() bool {
-	hash := maphash.Hash{}
-	hash.WriteString(m.parent.View())
-	value := hash.Sum64()
-	if m.cache.parent.hash == value {
-		return false
-	}
-	m.cache.parent.hash = value
-
-	// We need to split the parent's view into line by line
-	// as we will have to modify some lines to render the box instead.
-	m.cache.parent.lines, m.cache.parent.widths, m.cache.parent.maxWidth = utils.Lines(m.parent.View())
-	return true
-}
-
-// cacheChildView is similar to cacheParentView, but caches the child's view instead.
-func (m *Model) cacheChildView() bool {
-	hash := maphash.Hash{}
-	hash.WriteString(m.child.View())
-	value := hash.Sum64()
-	if m.cache.child.hash == value {
-		return false
-	}
-	m.cache.child.hash = value
-
-	m.cache.child.lines, m.cache.child.widths, m.cache.child.maxWidth = utils.Lines(m.child.View())
-	return true
-}
-
-func (m *Model) generateLeftPadding(chars []string) string {
-	limit := min(m.winDims.Width, m.cache.leftPadding)
-	return generateLeftPadding(chars, limit)
+	builder.WriteString(m.generateLeftPadding(chars))
+	builder.WriteString(generateBottomBorder(m.dims.Width, m.style))
+	builder.WriteString(m.generateRightPadding(chars))
+	builder.WriteByte('\n')
+	return builder.String()
 }
 
 func (m *Model) writeLeftPadding(chars []string) {
 	m.builder.WriteString(m.generateLeftPadding(chars))
 }
 
+func (m *Model) generateLeftPadding(chars []string) string {
+	limit := min(m.winDims.Width, m.cache.leftPadWidth)
+	return generateLeftPadding(chars, limit)
+}
+
 func generateLeftPadding(chars []string, width int) string {
 	return strings.Join(chars[:min(len(chars), width)], "")
 }
+
 func (m *Model) generateRightPadding(chars []string) string {
-	limit := min(m.winDims.Width, m.cache.leftPadding+m.dims.Width)
+	limit := min(m.winDims.Width, m.cache.leftPadWidth+m.dims.Width)
 	return generateRightPadding(chars, limit)
 }
 
@@ -191,7 +205,7 @@ func generateRightPadding(chars []string, width int) string {
 	return strings.Join(chars[width:], "")
 }
 
-func topBorder(width int, style lipgloss.Style, tt *title.Title) string {
+func generateTopBorder(width int, style lipgloss.Style, tt *title.Title) string {
 	ttStr := ""
 	if tt != nil {
 		ttStr = tt.Render()
@@ -214,12 +228,12 @@ func topBorder(width int, style lipgloss.Style, tt *title.Title) string {
 	builder.WriteString(unsetStyle.Render(border.TopLeft))
 
 	{
-		renderedTop := unsetStyle.Render(
+		renderedBorderTop := unsetStyle.Render(
 			strings.Repeat(border.Top, remainingWidth/2),
 		)
-		builder.WriteString(renderedTop)
+		builder.WriteString(renderedBorderTop)
 		builder.WriteString(ttStr)
-		builder.WriteString(renderedTop)
+		builder.WriteString(renderedBorderTop)
 		if remainingWidth%2 == 1 {
 			builder.WriteString(unsetStyle.Render(border.Top))
 		}
@@ -229,7 +243,7 @@ func topBorder(width int, style lipgloss.Style, tt *title.Title) string {
 	return builder.String()
 }
 
-func bottomBorder(width int, style lipgloss.Style) string {
+func generateBottomBorder(width int, style lipgloss.Style) string {
 	builder := strings.Builder{}
 	border, _, _, _, _ := style.GetBorder()
 	style = style.UnsetBorderStyle()
