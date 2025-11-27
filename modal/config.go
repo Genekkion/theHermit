@@ -1,4 +1,4 @@
-package box
+package modal
 
 import (
 	"github.com/charmbracelet/lipgloss"

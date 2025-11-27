@@ -1,4 +1,4 @@
-package box
+package modal
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,6 +13,7 @@ func (m Model) Update(msg tea.Msg) (model tea.Model, cmd tea.Cmd) {
 	default:
 		cmds := make([]tea.Cmd, 0, 2)
 		if m.isShown {
+			// Note that the child is only updated if the modal is shown.
 			m.child, cmd = m.child.Update(msg)
 			if cmd != nil {
 				cmds = append(cmds, cmd)
