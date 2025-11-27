@@ -120,7 +120,8 @@ func (m *Model) cacheDepsViews() {
 // the parent's view has changed since the last time it was cached.
 func (m *Model) cacheParentView() bool {
 	defer m.cache.hash.Reset()
-	m.cache.hash.WriteString(m.parent.View())
+	view := m.parent.View()
+	m.cache.hash.WriteString(view)
 	value := m.cache.hash.Sum64()
 
 	if m.cache.parent.hash == value {
@@ -130,14 +131,15 @@ func (m *Model) cacheParentView() bool {
 
 	// We need to split the parent's view into line by line
 	// as we will have to modify some lines to render the box instead.
-	m.cache.parent.lines, m.cache.parent.widths, m.cache.parent.maxWidth = utils.Lines(m.parent.View())
+	m.cache.parent.lines, m.cache.parent.widths, m.cache.parent.maxWidth = utils.Lines(view)
 	return true
 }
 
 // cacheChildView is similar to cacheParentView, but caches the child's view instead.
 func (m *Model) cacheChildView() bool {
 	defer m.cache.hash.Reset()
-	m.cache.hash.WriteString(m.child.View())
+	view := m.child.View()
+	m.cache.hash.WriteString(view)
 	value := m.cache.hash.Sum64()
 
 	if m.cache.child.hash == value {
@@ -145,6 +147,6 @@ func (m *Model) cacheChildView() bool {
 	}
 	m.cache.child.hash = value
 
-	m.cache.child.lines, m.cache.child.widths, m.cache.child.maxWidth = utils.Lines(m.child.View())
+	m.cache.child.lines, m.cache.child.widths, m.cache.child.maxWidth = utils.Lines(view)
 	return true
 }

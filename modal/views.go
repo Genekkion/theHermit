@@ -10,8 +10,6 @@ import (
 
 // View implements the tea.Model interface.
 func (m Model) View() string {
-	m.isShown = true
-
 	if !m.isShown {
 		// If the box is not shown, return the parent's view without obstruction.
 		if m.parent != nil {
@@ -115,7 +113,7 @@ func (m *Model) generateContent() string {
 
 		builder.WriteString(unsetStyle.Render(border.Left))
 
-		line = line[:max(0, min(len(line), m.dims.Width-2))]
+		line = line[:max(0, min(childWidths[i], m.dims.Width-2))]
 		builder.WriteString(line)
 		if childWidths[i] < m.dims.Width-2 {
 			spacer := strings.Repeat(" ", m.dims.Width-2-childWidths[i])
@@ -183,9 +181,10 @@ func generateTopBorder(width int, style lipgloss.Style, tt *title.Title) string 
 	}
 
 	availableWidth := width - 2
-	ttWidth := lipgloss.Width(ttStr)
+	ttCols := utils.SplitColumns(ttStr)
+	ttWidth := len(ttCols)
 	if ttWidth >= availableWidth {
-		return ttStr[:availableWidth]
+		return strings.Join(ttCols[:availableWidth], "")
 	}
 	remainingWidth := availableWidth - ttWidth
 
@@ -235,14 +234,14 @@ func (m *Model) generateBottomBorder() string {
 func generateBottomBorder(width int, style lipgloss.Style) string {
 	builder := strings.Builder{}
 	border, _, _, _, _ := style.GetBorder()
-	style = style.UnsetBorderStyle()
+	unsetStyle := style.UnsetBorderStyle()
 
-	builder.WriteString(style.Render(border.BottomLeft))
-	bottom := style.Render(
+	builder.WriteString(unsetStyle.Render(border.BottomLeft))
+	bottom := unsetStyle.Render(
 		strings.Repeat(border.Bottom, width-2),
 	)
-	builder.WriteString(style.Render(bottom))
-	builder.WriteString(style.Render(border.BottomRight))
+	builder.WriteString(bottom)
+	builder.WriteString(unsetStyle.Render(border.BottomRight))
 
 	return builder.String()
 }
