@@ -6,25 +6,116 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/genekkion/theHermit/shared/title"
+	"github.com/genekkion/theHermit/utils"
 )
 
 func (m Model) View() string {
+	m.isShown = true
+
 	if !m.isShown {
 		// If the box is not shown, return the parent's view without obstruction.
-		return m.parent.View()
+		if m.parent != nil {
+			return m.parent.View()
+		}
+		// Should never happen
+		return ""
 	} else if m.winDims.Width == 0 || m.winDims.Height == 0 {
 		// If the window is flattened, we do not render anything.
 		return ""
 	}
 
+	parentLines := strings.Split(m.parent.View(), "\n")
+	//for i, line := range parentLines {
+	//	fmt.Printf("PARENT %d: '%s'\n", i, line)
+	//}
+	if len(parentLines) == 0 || lipgloss.Width(m.parent.View()) == 0 {
+		return "EMPTY"
+	}
+
 	// Calculate where to insert the box
-	//startIndex := (m.winDims.Height / 2) - (m.dims.Height / 2) + 1
-	//endIndex := startIndex + m.dims.Height
+	startIndex := (m.winDims.Height / 2) - (m.dims.Height / 2)
+	for _, line := range parentLines[:startIndex] {
+		m.builder.WriteString(line)
+		m.builder.WriteByte('\n')
+	}
+	m.writeTopBorder(parentLines[startIndex])
+
+	// CONTENT
+	childLines := strings.Split(m.child.View(), "\n")
+	childLimit := min(len(childLines), m.dims.Height-2)
+	for i, line := range childLines[:childLimit] {
+		leftPad := m.generateLeftPadding(utils.SplitColumns(parentLines[startIndex+i+1]))
+		m.builder.WriteString(leftPad)
+		border, _, _, _, _ := m.style.GetBorder()
+		m.builder.WriteString(
+			m.style.UnsetBorderStyle().Render(border.Left),
+		)
+
+		m.builder.WriteString(line)
+		spacer := strings.Repeat(" ", m.dims.Width-2-lipgloss.Width(line))
+		spacer = m.style.UnsetBorderStyle().Render(spacer)
+		m.builder.WriteString(spacer)
+
+		m.builder.WriteString(
+			m.style.UnsetBorderStyle().Render(border.Right),
+		)
+
+		rightPad := m.generateRightPadding(utils.SplitColumns(parentLines[startIndex+i+1]))
+		m.builder.WriteString(rightPad)
+
+		m.builder.WriteByte('\n')
+	}
+	for i := range m.dims.Height - 2 - childLimit {
+		leftPad := m.generateLeftPadding(utils.SplitColumns(parentLines[startIndex+childLimit+i+1]))
+		m.builder.WriteString(leftPad)
+
+		border, _, _, _, _ := m.style.GetBorder()
+		m.builder.WriteString(
+			m.style.UnsetBorderStyle().Render(border.Left),
+		)
+
+		spacer := strings.Repeat(" ", m.dims.Width-2)
+		m.builder.WriteString(
+			m.style.UnsetBorderStyle().Render(spacer),
+		)
+		m.builder.WriteString(
+			m.style.UnsetBorderStyle().Render(border.Right),
+		)
+
+		rightPad := m.generateRightPadding(utils.SplitColumns(parentLines[startIndex+childLimit+i+1]))
+		m.builder.WriteString(rightPad)
+
+		m.builder.WriteString("\n")
+	}
+
+	endIndex := startIndex + m.dims.Height
+	m.writeBottomBorder(parentLines[endIndex-1])
+	for _, line := range parentLines[endIndex:] {
+		m.builder.WriteString(line)
+		m.builder.WriteByte('\n')
+	}
 
 	//for _, line := range m.parentLines {
 	//}
 
-	return ""
+	s := m.builder.String()
+	return s[:len(s)-1]
+}
+
+func (m *Model) writeTopBorder(line string) {
+	chars := utils.SplitColumns(line)
+	m.builder.WriteString(m.generateLeftPadding(chars))
+	m.builder.WriteString(topBorder(m.dims.Width, m.style, m.title))
+	m.builder.WriteString(m.generateRightPadding(chars))
+	m.builder.WriteByte('\n')
+}
+
+func (m *Model) writeBottomBorder(line string) {
+	chars := utils.SplitColumns(line)
+	m.builder.WriteString(m.generateLeftPadding(chars))
+	m.builder.WriteString(bottomBorder(m.dims.Width, m.style))
+	m.builder.WriteString(m.generateRightPadding(chars))
+	m.builder.WriteByte('\n')
 }
 
 // cacheParentView caches the parent's view by using its hash. Returns if
@@ -58,19 +149,24 @@ func (m *Model) cacheChildView() bool {
 	return true
 }
 
-func (m *Model) cache12() {
-
-	//chars := utils.SplitColumns(line)
-
-}
-
 func (m *Model) generateLeftPadding(chars []string) string {
 	limit := min(m.winDims.Width, m.cache.leftPadding)
 	return generateLeftPadding(chars, limit)
 }
 
-func generateLeftPadding(chars []string, limit int) string {
-	return strings.Join(chars[:limit], "")
+func generateLeftPadding(chars []string, width int) string {
+	return strings.Join(chars[:min(len(chars), width)], "")
+}
+func (m *Model) generateRightPadding(chars []string) string {
+	limit := min(m.winDims.Width, m.cache.leftPadding+m.dims.Width)
+	return generateRightPadding(chars, limit)
+}
+
+func generateRightPadding(chars []string, width int) string {
+	if len(chars) <= width {
+		return strings.Repeat(" ", width-len(chars))
+	}
+	return strings.Join(chars[width:], "")
 }
 
 func topBorder(width int, style lipgloss.Style, tt *title.Title) string {
@@ -88,18 +184,22 @@ func topBorder(width int, style lipgloss.Style, tt *title.Title) string {
 
 	builder := strings.Builder{}
 	border, _, _, _, _ := style.GetBorder()
-	builder.WriteString(border.TopLeft)
+	style = style.UnsetBorderStyle()
+
+	builder.WriteString(style.Render(border.TopLeft))
 
 	{
-		top := style.UnsetBorderStyle().Render(border.Top)
-		builder.WriteString(strings.Repeat(top, remainingWidth/2))
+		top := style.Render(
+			strings.Repeat(border.Top, remainingWidth/2),
+		)
+		builder.WriteString(top)
 		builder.WriteString(ttStr)
-		builder.WriteString(strings.Repeat(top, remainingWidth/2))
+		builder.WriteString(top)
 		if remainingWidth%2 == 1 {
-			builder.WriteString(top)
+			builder.WriteString(style.Render(border.Top))
 		}
 	}
-	builder.WriteString(border.TopRight)
+	builder.WriteString(style.Render(border.TopRight))
 
 	return builder.String()
 }
@@ -107,11 +207,14 @@ func topBorder(width int, style lipgloss.Style, tt *title.Title) string {
 func bottomBorder(width int, style lipgloss.Style) string {
 	builder := strings.Builder{}
 	border, _, _, _, _ := style.GetBorder()
+	style = style.UnsetBorderStyle()
 
-	builder.WriteString(border.BottomLeft)
-	bottom := style.UnsetBorderStyle().Render(border.Bottom)
-	builder.WriteString(strings.Repeat(bottom, width-2))
-	builder.WriteString(border.BottomRight)
+	builder.WriteString(style.Render(border.BottomLeft))
+	bottom := style.Render(
+		strings.Repeat(border.Bottom, width-2),
+	)
+	builder.WriteString(style.Render(bottom))
+	builder.WriteString(style.Render(border.BottomRight))
 
 	return builder.String()
 }

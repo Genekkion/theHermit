@@ -8,8 +8,16 @@ func (m Model) Update(msg tea.Msg) (model tea.Model, cmd tea.Cmd) {
 	case tea.WindowSizeMsg:
 		return m.handleWindowResize(msg)
 	default:
+		cmds := make([]tea.Cmd, 2)
 		m.child, cmd = m.child.Update(msg)
-		return m, cmd
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+		m.parent, cmd = m.parent.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
+		return m, tea.Batch(cmds...)
 	}
 }
 
@@ -36,10 +44,19 @@ func (m Model) handleWindowResize(msg tea.WindowSizeMsg) (model tea.Model, cmd t
 	m.winDims.Height = msg.Height
 	m.winDims.Width = msg.Width
 
-	// Propagate the message to the child
-	m.child, cmd = m.child.Update(msg)
+	// Propagate the message to the parent and child
+	cmds := make([]tea.Cmd, 0, 2)
+	m.parent, cmd = m.parent.Update(msg)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
 
-	return m, cmd
+	m.child, cmd = m.child.Update(msg)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) cacheViews(msg tea.WindowSizeMsg) {

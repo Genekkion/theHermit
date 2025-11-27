@@ -8,7 +8,7 @@ import (
 
 type Config struct {
 	title         *title.Title
-	maxDimensions shared.Dimensions
+	maxDimensions *shared.Dimensions
 	style         lipgloss.Style
 }
 
@@ -28,7 +28,7 @@ func WithTitle(t title.Title) Option {
 
 func WithMaxDimensions(dimensions shared.Dimensions) Option {
 	return func(c *Config) {
-		c.maxDimensions = dimensions
+		c.maxDimensions = &dimensions
 	}
 }
 

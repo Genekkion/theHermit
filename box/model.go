@@ -35,11 +35,31 @@ type ViewCache struct {
 	leftPaddingStr string
 }
 
-func New() Model {
-	return Model{
-
-		builder: strings.Builder{},
+func New(dimensions shared.Dimensions, parent tea.Model, child tea.Model, opts ...Option) (m *Model, err error) {
+	if parent == nil {
+		return nil, ErrMissingParent
+	} else if child == nil {
+		return nil, ErrMissingChild
 	}
+
+	config := defaultConfig()
+	for _, opt := range opts {
+		opt(&config)
+	}
+	if config.maxDimensions == nil {
+		config.maxDimensions = &dimensions
+	}
+
+	m = &Model{
+		dims:    dimensions,
+		builder: strings.Builder{},
+		Config:  config,
+
+		parent: parent,
+		child:  child,
+	}
+
+	return m, nil
 }
 
 func (m Model) Init() tea.Cmd {
