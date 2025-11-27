@@ -61,6 +61,7 @@ type ViewCacheModel struct {
 	maxWidth int
 }
 
+// New creates a new modal model.
 func New(dimensions shared.Dimensions, parent tea.Model, child tea.Model, opts ...Option) (m *Model, err error) {
 	if parent == nil {
 		return nil, ErrMissingParent
@@ -89,6 +90,17 @@ func New(dimensions shared.Dimensions, parent tea.Model, child tea.Model, opts .
 	return m, nil
 }
 
-func (m Model) Init() tea.Cmd {
-	return nil
+// Init implements the tea.Model interface.
+func (m Model) Init() (cmd tea.Cmd) {
+	cmds := make([]tea.Cmd, 0, 2)
+	cmd = m.parent.Init()
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
+	cmd = m.child.Init()
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+	return tea.Batch(cmds...)
 }

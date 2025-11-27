@@ -8,6 +8,7 @@ import (
 	"github.com/genekkion/theHermit/utils"
 )
 
+// View implements the tea.Model interface.
 func (m Model) View() string {
 	m.isShown = true
 
@@ -30,20 +31,24 @@ func (m Model) View() string {
 	// since the number of bytes per line is not constant.
 	m.builder.Reset()
 
+	// Write all values.
 	m.writeTopSpacer()
 	m.writeTopBorder()
 	m.writeContent()
 	m.writeBottomBorder()
 	m.writeBottomSpacer()
 
+	// Return the rendered string.
 	return m.builder.String()
 }
 
+// writeTopSpacer writes the top spacer string to the builder.
 func (m *Model) writeTopSpacer() {
-	//m.builder.WriteString(m.generateTopSpacer())
 	m.builder.WriteString(m.cache.topSpacer)
 }
 
+// generateTopSpacer returns the top spacer string, i.e. the lines above the
+// modal.
 func (m *Model) generateTopSpacer() string {
 	builder := strings.Builder{}
 
@@ -54,11 +59,13 @@ func (m *Model) generateTopSpacer() string {
 	return builder.String()
 }
 
+// writeBottomSpacer writes the bottom spacer string to the builder.
 func (m *Model) writeBottomSpacer() {
-	//m.builder.WriteString(m.generateBottomSpacer())
 	m.builder.WriteString(m.cache.bottomSpacer)
 }
 
+// generateBottomSpacer returns the bottom spacer string, i.e. the lines below
+// the modal.
 func (m *Model) generateBottomSpacer() string {
 	builder := strings.Builder{}
 
@@ -74,12 +81,14 @@ func (m *Model) generateBottomSpacer() string {
 	return builder.String()
 }
 
-// m.builder.WriteStringContent(parentLines, startIndex)
+// writeContent writes the content string to the builder.
 func (m *Model) writeContent() {
-	//m.builder.WriteString(m.generateContent())
 	m.builder.WriteString(m.cache.content)
 }
 
+// generateContent returns the content string, i.e. the lines which include the modal itself
+// and the child view. Note that the top and bottom borders are not included and have
+// separate functions.
 func (m *Model) generateContent() string {
 	builder := strings.Builder{}
 
@@ -148,11 +157,13 @@ func (m *Model) generateContent() string {
 	return builder.String()
 }
 
+// writeTopBorder writes the top border string to the builder.
 func (m *Model) writeTopBorder() {
-	//m.builder.WriteString(m.generateTopBorder())
 	m.builder.WriteString(m.cache.topBorder)
 }
 
+// generateTopBorder returns the top border string, i.e. the line above the modal, which may
+// include the title if present.
 func (m *Model) generateTopBorder() string {
 	builder := strings.Builder{}
 	line := m.cache.parent.lines[m.cache.startIndex]
@@ -164,47 +175,7 @@ func (m *Model) generateTopBorder() string {
 	return builder.String()
 }
 
-func (m *Model) writeBottomBorder() {
-	//m.builder.WriteString(m.generateBottomBorder())
-	m.builder.WriteString(m.cache.bottomBorder)
-}
-
-func (m *Model) generateBottomBorder() string {
-	builder := strings.Builder{}
-	line := m.cache.parent.lines[m.cache.endIndex-1]
-	chars := utils.SplitColumns(line)
-	builder.WriteString(m.generateLeftPadding(chars))
-	builder.WriteString(generateBottomBorder(m.dims.Width, m.style))
-	builder.WriteString(m.generateRightPadding(chars))
-	builder.WriteByte('\n')
-	return builder.String()
-}
-
-func (m *Model) writeLeftPadding(chars []string) {
-	m.builder.WriteString(m.generateLeftPadding(chars))
-}
-
-func (m *Model) generateLeftPadding(chars []string) string {
-	limit := min(m.winDims.Width, m.cache.leftPadWidth)
-	return generateLeftPadding(chars, limit)
-}
-
-func generateLeftPadding(chars []string, width int) string {
-	return strings.Join(chars[:min(len(chars), width)], "")
-}
-
-func (m *Model) generateRightPadding(chars []string) string {
-	limit := min(m.winDims.Width, m.cache.leftPadWidth+m.dims.Width)
-	return generateRightPadding(chars, limit)
-}
-
-func generateRightPadding(chars []string, width int) string {
-	if len(chars) <= width {
-		return strings.Repeat(" ", width-len(chars))
-	}
-	return strings.Join(chars[width:], "")
-}
-
+// generateTopBorder returns the top border string.
 func generateTopBorder(width int, style lipgloss.Style, tt *title.Title) string {
 	ttStr := ""
 	if tt != nil {
@@ -243,6 +214,24 @@ func generateTopBorder(width int, style lipgloss.Style, tt *title.Title) string 
 	return builder.String()
 }
 
+// writeBottomBorder writes the bottom border string to the builder.
+func (m *Model) writeBottomBorder() {
+	m.builder.WriteString(m.cache.bottomBorder)
+}
+
+// generateBottomBorder returns the bottom border string, i.e. the line below the modal.
+func (m *Model) generateBottomBorder() string {
+	builder := strings.Builder{}
+	line := m.cache.parent.lines[m.cache.endIndex-1]
+	chars := utils.SplitColumns(line)
+	builder.WriteString(m.generateLeftPadding(chars))
+	builder.WriteString(generateBottomBorder(m.dims.Width, m.style))
+	builder.WriteString(m.generateRightPadding(chars))
+	builder.WriteByte('\n')
+	return builder.String()
+}
+
+// generateBottomBorder returns the bottom border string.
 func generateBottomBorder(width int, style lipgloss.Style) string {
 	builder := strings.Builder{}
 	border, _, _, _, _ := style.GetBorder()
@@ -256,4 +245,31 @@ func generateBottomBorder(width int, style lipgloss.Style) string {
 	builder.WriteString(style.Render(border.BottomRight))
 
 	return builder.String()
+}
+
+// generateLeftPadding returns the left padding string, i.e. the characters from the parent view,
+// which are present on the left side of the modal when rendered.
+func (m *Model) generateLeftPadding(chars []string) string {
+	limit := min(m.winDims.Width, m.cache.leftPadWidth)
+	return generateLeftPadding(chars, limit)
+}
+
+// generateLeftPadding returns the left padding string.
+func generateLeftPadding(chars []string, width int) string {
+	return strings.Join(chars[:min(len(chars), width)], "")
+}
+
+// generateRightPadding returns the right padding string, i.e. the characters from the parent view,
+// which are present on the right side of the modal when rendered.
+func (m *Model) generateRightPadding(chars []string) string {
+	limit := min(m.winDims.Width, m.cache.leftPadWidth+m.dims.Width)
+	return generateRightPadding(chars, limit)
+}
+
+// generateRightPadding returns the right padding string.
+func generateRightPadding(chars []string, width int) string {
+	if len(chars) <= width {
+		return strings.Repeat(" ", width-len(chars))
+	}
+	return strings.Join(chars[width:], "")
 }

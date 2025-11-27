@@ -30,8 +30,7 @@ func (m Model) Update(msg tea.Msg) (model tea.Model, cmd tea.Cmd) {
 	}
 }
 
-// handleWindowResize handles window resizes, accounting for the max dims
-// if set.
+// handleWindowResize handles window resizes, accounting for the max dims if set.
 func (m Model) handleWindowResize(msg tea.WindowSizeMsg) (model tea.Model, cmd tea.Cmd) {
 	// Update the height
 	if msg.Height >= m.dims.Height {
@@ -74,6 +73,7 @@ func (m Model) handleWindowResize(msg tea.WindowSizeMsg) (model tea.Model, cmd t
 	return m, tea.Batch(cmds...)
 }
 
+// triggerCacheViews triggers the cache views to be recalculated.
 func (m *Model) triggerCacheViews() {
 	m.cacheDepsViews()
 	m.cache.endIndex = min(
@@ -86,6 +86,7 @@ func (m *Model) triggerCacheViews() {
 	m.cache.flags.reset()
 }
 
+// cacheViews caches the views based on the cached dependencies.
 func (m *Model) cacheViews() {
 	if m.cache.flags.parentModified {
 		// If the parent model is modified, we need to regenerate
@@ -101,6 +102,7 @@ func (m *Model) cacheViews() {
 	}
 }
 
+// cacheDepsViews caches the dependencies of the views.
 func (m *Model) cacheDepsViews() {
 	// Because it is likely that the parent's view will not
 	// change while the box is displayed, we can try caching
