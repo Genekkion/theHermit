@@ -1,0 +1,106 @@
+package modal
+
+import (
+	"hash/maphash"
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/genekkion/theHermit/shared"
+)
+
+// Model is the model for the box which implements the tea.Model interface.
+type Model struct {
+	isShown bool
+
+	dims    shared.Dimensions
+	winDims shared.Dimensions
+	Config
+
+	parent tea.Model
+	child  tea.Model
+
+	// For rendering
+	builder strings.Builder
+	cache   ViewCache
+}
+
+// ViewCache stores any cache-related items such as hashes
+// as well as the cached views.
+type ViewCache struct {
+	hash   maphash.Hash
+	parent ViewCacheModel
+	child  ViewCacheModel
+
+	leftPadWidth int
+	startIndex   int
+	endIndex     int
+
+	flags ViewCacheFlags
+
+	topSpacer    string
+	topBorder    string
+	content      string
+	bottomBorder string
+	bottomSpacer string
+}
+
+type ViewCacheFlags struct {
+	parentModified bool
+	childModified  bool
+}
+
+func (v *ViewCacheFlags) reset() {
+	v.parentModified = false
+	v.childModified = false
+}
+
+type ViewCacheModel struct {
+	hash     uint64
+	lines    []string
+	widths   []int
+	maxWidth int
+}
+
+// New creates a new modal model.
+func New(dimensions shared.Dimensions, parent tea.Model, child tea.Model, opts ...Option) (m *Model, err error) {
+	if parent == nil {
+		return nil, ErrMissingParent
+	} else if child == nil {
+		return nil, ErrMissingChild
+	}
+
+	config := defaultConfig()
+	for _, opt := range opts {
+		opt(&config)
+	}
+	if config.maxDimensions == nil {
+		config.maxDimensions = &dimensions
+	}
+
+	m = &Model{
+		dims:    dimensions,
+		builder: strings.Builder{},
+		Config:  config,
+
+		isShown: true,
+		parent:  parent,
+		child:   child,
+	}
+
+	return m, nil
+}
+
+// Init implements the tea.Model interface.
+func (m Model) Init() (cmd tea.Cmd) {
+	cmds := make([]tea.Cmd, 0, 2)
+	cmd = m.parent.Init()
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
+	cmd = m.child.Init()
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+	return tea.Batch(cmds...)
+}
